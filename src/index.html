@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QSense</title>
+    <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon" />
+    <style>
+        /* ===== CSS Variables ===== */
+        :root {
+            --primary: #f6b07c;
+            --primary-dark: #d4845a;
+            --primary-light: #f5cba0;
+            --primary-transparent: rgba(246, 176, 124, 0.12);
+            --primary-glow: rgba(246, 176, 124, 0.35);
+            --bg-primary: #0e0b0a;
+            --bg-secondary: #1a1412;
+            --bg-tertiary: #221c19;
+            --text-primary: #e4d7cf;
+            --text-secondary: #d4c4b8;
+            --text-tertiary: #a28c7c;
+            --border-color: #3a2c24;
+            --error-color: #f58b7a;
+            --success-color: #eab676;
+            --card-hover: rgba(246, 176, 124, 0.05);
+            --scrollbar-track: #1a1412;
+            --scrollbar-thumb: #3a2c24;
+            --scrollbar-thumb-hover: #5a4438;
+        }
+
+        /* ===== 全局滚动条 ===== */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+        ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 0; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+        ::-webkit-scrollbar-corner { background: var(--scrollbar-track); }
+        * { scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track); }
+
+        /* ===== Reset ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; overflow: hidden; }
+        body {
+            font-family: 'Inter', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            font-weight: 300;
+            font-size: 13px;
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===== Top Bar ===== */
+        #topbar {
+            height: 32px;
+            min-height: 32px;
+            display: flex;
+            flex-shrink: 0;
+            align-items: center;
+            background: rgba(18, 14, 12, 0.96);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(246, 176, 124, 0.25);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.4), 0 0 18px rgba(246,176,124,0.08);
+            padding: 0 4px;
+            z-index: 10;
+        }
+        .logo-group { display: flex; align-items: center; flex-shrink: 0; padding: 0 8px; }
+        .logo-q {
+            background: linear-gradient(135deg, #e4d7cf 0%, #f5cba0 25%, #f6b07c 60%, #d4845a 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 20px;
+            font-weight: 600;
+            letter-spacing: -1px;
+            text-shadow: 0 0 12px rgba(246,176,124,0.5);
+            cursor: pointer;
+        }
+        .flex-spacer { flex: 1; min-width: 20px; }
+
+        .top-menu-wrapper {
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+            gap: 0;
+            margin-left: auto;
+        }
+        .top-menu-btn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 32px;
+            padding: 0 12px;
+            font-weight: 450;
+            font-size: 12px;
+            color: var(--primary-light);
+            cursor: pointer;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+            position: relative;
+            text-shadow: 0 0 8px rgba(246,176,124,0.2);
+            flex-shrink: 0;
+            border: none;
+            background: transparent;
+            font-family: inherit;
+        }
+        .top-menu-btn:hover {
+            color: #e4d7cf;
+            background-color: var(--primary-transparent);
+            text-shadow: 0 0 12px rgba(246,176,124,0.5);
+        }
+        .top-menu-btn::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary-light), transparent);
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+        .top-menu-btn:hover::after {
+            width: 50%;
+        }
+
+        .window-controls {
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .window-control {
+            width: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            color: var(--primary-light);
+            font-size: 14px;
+            transition: all 0.3s ease;
+            user-select: none;
+            font-weight: 350;
+            text-shadow: 0 0 8px rgba(246,176,124,0.15);
+            flex-shrink: 0;
+            height: 32px;
+        }
+        .window-control:hover {
+            background-color: rgba(246,176,124,0.12);
+            color: #e4d7cf;
+            text-shadow: 0 0 12px rgba(246,176,124,0.4);
+        }
+        .window-control.close:hover {
+            background-color: rgba(232,17,35,0.9);
+            color: white;
+        }
+
+        /* ===== Main ===== */
+        #main {
+            flex: 1;
+            background: var(--bg-primary);
+            position: relative;
+            overflow: hidden;
+        }
+        #main::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 20% 30%, rgba(246,176,124,0.06) 0%, transparent 45%),
+                radial-gradient(circle at 85% 70%, rgba(212,132,90,0.04) 0%, transparent 45%);
+            z-index: 0;
+            pointer-events: none;
+        }
+        .placeholder {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--text-tertiary);
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            opacity: 0.4;
+            text-align: center;
+            z-index: 1;
+        }
+        .placeholder .big { font-size: 48px; display: block; margin-bottom: 12px; opacity: 0.3; }
+
+        /* ===== 右侧边缘工具条组 ===== */
+        .edge-toolbar-group {
+            position: fixed;
+            right: 0;
+            bottom: 60px;
+            z-index: 150;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: flex-end;
+        }
+
+        .edge-toolbar {
+            display: flex;
+            align-items: stretch;
+        }
+
+        .edge-toolbar .color-bar {
+            width: 4px;
+            background: var(--primary);
+            opacity: 0.2;
+            flex-shrink: 0;
+            transition: opacity 0.3s ease, width 0.3s ease;
+        }
+        .edge-toolbar:hover .color-bar {
+            opacity: 0.6;
+            width: 3px;
+        }
+
+        .edge-toolbar .tool-box {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-right: none;
+            box-shadow: -4px 0 20px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 0;
+            gap: 0;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(8px);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            flex-shrink: 0;
+            width: 44px;
+        }
+        .edge-toolbar:hover .tool-box {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(0);
+        }
+
+        .edge-toolbar .tool-box .tool-btn {
+            width: 100%;
+            height: 32px;
+            min-height: 32px;
+            background: none;
+            border: none;
+            color: var(--text-tertiary);
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            border-radius: 0;
+            font-family: inherit;
+            padding: 0;
+            flex-shrink: 0;
+        }
+        .edge-toolbar .tool-box .tool-btn:hover {
+            color: var(--primary-light);
+            background: var(--card-hover);
+        }
+        .edge-toolbar .tool-box .tool-btn:active {
+            transform: scale(0.90);
+        }
+        .edge-toolbar .tool-box .tool-btn:not(:last-child) {
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* ===== 对话框 ===== */
+        .dialog-container {
+            position: fixed;
+            bottom: 80px;
+            left: 40px;
+            width: 520px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 40px rgba(246,176,124,0.04);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            z-index: 99;
+        }
+        .dialog-container.hidden {
+            opacity: 0;
+            transform: scale(0.92) translateY(10px);
+            pointer-events: none;
+        }
+        .dialog-drag-area {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 14px;
+            cursor: grab;
+            z-index: 10;
+            background: transparent;
+        }
+        .dialog-drag-area:active { cursor: grabbing; }
+
+        .dialog-body {
+            display: flex;
+            align-items: stretch;
+            padding: 0;
+            min-height: 44px;
+        }
+        .dialog-body .input-area {
+            flex: 1;
+            background: var(--bg-tertiary);
+            border: none;
+            padding: 10px 14px;
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            font-family: inherit;
+            min-height: 44px;
+            max-height: 150px;
+        }
+        .dialog-body .input-area:focus { border: none; box-shadow: none; }
+        .dialog-body .input-area::placeholder {
+            color: var(--text-tertiary);
+            font-size: 13px;
+        }
+
+        /* 发送按钮 — 宽度缩到 10px */
+        .dialog-body .send-btn {
+            width: 10px;
+            min-height: 44px;
+            background: var(--primary);
+            border: none;
+            color: transparent;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s, width 0.2s;
+            flex-shrink: 0;
+            padding: 0;
+            font-size: 0;
+        }
+        .dialog-body .send-btn:hover {
+            background: var(--primary-dark);
+            box-shadow: 0 0 20px var(--primary-glow);
+            width: 14px;
+        }
+        .dialog-body .send-btn:active {
+            transform: scale(0.94);
+        }
+
+        /* ===== 弹窗 ===== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 300;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+
+        .modal-box {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 24px 80px rgba(0,0,0,0.8);
+            width: 400px;
+            max-width: 90vw;
+            max-height: 70vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .modal-header {
+            padding: 6px 16px;
+            min-height: 28px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            background: var(--bg-tertiary);
+        }
+        .modal-header .modal-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--primary-light);
+        }
+        .modal-header .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-tertiary);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0;
+            transition: color 0.2s;
+            line-height: 1;
+            margin-right: -4px;
+        }
+        .modal-header .modal-close:hover {
+            color: var(--primary-light);
+        }
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 20px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            line-height: 1.7;
+        }
+        .modal-body .modal-icon {
+            font-size: 28px;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 640px) {
+            .dialog-container {
+                width: calc(100% - 32px);
+                left: 16px;
+                bottom: 70px;
+            }
+            .dialog-body .input-area { font-size: 13px; padding: 8px 12px; min-height: 40px; }
+            .dialog-body .send-btn { width: 8px; min-height: 40px; }
+            .dialog-body .send-btn:hover { width: 12px; }
+            .top-menu-btn { padding: 0 8px; font-size: 11px; }
+            .window-control { width: 32px; font-size: 13px; }
+            .modal-box { width: 95vw; max-height: 80vh; }
+            .edge-toolbar .tool-box { width: 36px; }
+            .edge-toolbar .tool-box .tool-btn { height: 28px; min-height: 28px; font-size: 15px; }
+            .edge-toolbar-group { bottom: 50px; gap: 4px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== TOP BAR ===== -->
+    <div id="topbar">
+        <div class="logo-group"><span class="logo-q">QSense</span></div>
+        <div class="flex-spacer"></div>
+        <div class="top-menu-wrapper">
+            <button class="top-menu-btn" data-modal="about">关于我们</button>
+            <button class="top-menu-btn" data-modal="settings">系统设置</button>
+            <button class="top-menu-btn" data-modal="notification">🔔</button>
+        </div>
+        <div class="window-controls">
+            <div class="window-control" id="winMin">−</div>
+            <div class="window-control" id="winMax">□</div>
+            <div class="window-control close" id="winClose">×</div>
+        </div>
+    </div>
+
+    <!-- ===== MAIN ===== -->
+    <div id="main">
+        <div class="placeholder" id="placeholder">
+            <span class="big">⌘</span>
+            空画布 · 等待指令
+            <br />
+            <span style="font-size:12px;opacity:0.6;">AI 生成的内容将在这里呈现</span>
+        </div>
+    </div>
+
+    <!-- ===== 右侧边缘工具条组 ===== -->
+    <div class="edge-toolbar-group">
+
+        <div class="edge-toolbar">
+            <div class="tool-box">
+                <button class="tool-btn" id="toolChat" title="聊天">💬</button>
+                <button class="tool-btn" id="toolCaption" title="字幕">📝</button>
+                <button class="tool-btn" id="toolMode" title="切换输入模式">⌨</button>
+            </div>
+            <div class="color-bar"></div>
+        </div>
+
+        <div class="edge-toolbar">
+            <div class="tool-box">
+                <button class="tool-btn" id="toolHome" title="主菜单">🏠</button>
+                <button class="tool-btn" id="toolMenu" title="当前菜单">☰</button>
+            </div>
+            <div class="color-bar"></div>
+        </div>
+
+    </div>
+
+    <!-- ===== 对话框 ===== -->
+    <div class="dialog-container" id="dialog">
+        <div class="dialog-drag-area" id="dialogDragArea"></div>
+        <div class="dialog-body">
+            <textarea class="input-area" id="chatInput" placeholder="输入消息 … 回车发送 · Shift+回车换行" rows="2"></textarea>
+            <button class="send-btn" id="sendBtn" title="发送 (Enter)"></button>
+        </div>
+    </div>
+
+    <!-- ===== 弹窗 ===== -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span class="modal-title" id="modalTitle">标题</span>
+                <button class="modal-close" id="modalClose">✕</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <span class="modal-icon" id="modalIcon">📄</span>
+                <div id="modalContent">内容</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            const dialog = document.getElementById('dialog');
+            const chatInput = document.getElementById('chatInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const placeholder = document.getElementById('placeholder');
+            const dragArea = document.getElementById('dialogDragArea');
+
+            const toolChat = document.getElementById('toolChat');
+            const toolCaption = document.getElementById('toolCaption');
+            const toolMode = document.getElementById('toolMode');
+            const toolHome = document.getElementById('toolHome');
+            const toolMenu = document.getElementById('toolMenu');
+
+            const modalOverlay = document.getElementById('modalOverlay');
+            const modalClose = document.getElementById('modalClose');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalIcon = document.getElementById('modalIcon');
+            const modalContent = document.getElementById('modalContent');
+            const topMenuBtns = document.querySelectorAll('.top-menu-btn');
+
+            function closeDialog() { dialog.classList.add('hidden'); }
+            function openDialog() { dialog.classList.remove('hidden'); setTimeout(() => chatInput.focus(), 150); }
+            function toggleDialog() { dialog.classList.contains('hidden') ? openDialog() : closeDialog(); }
+
+            toolChat.addEventListener('click', function(e) {
+                e.stopPropagation();
+                toggleDialog();
+            });
+
+            let captionOn = false;
+            toolCaption.addEventListener('click', function(e) {
+                e.stopPropagation();
+                captionOn = !captionOn;
+                this.style.color = captionOn ? 'var(--primary)' : '';
+                console.log('[QSense] 字幕:', captionOn ? '开启' : '关闭');
+                placeholder.innerHTML = `
+                    <span class="big">📝</span>
+                    字幕 ${captionOn ? '已开启' : '已关闭'}
+                    <br /><br />
+                    <span style="font-size:12px;opacity:0.5;">${captionOn ? '实时转录已激活' : '字幕功能已停用'}</span>
+                `;
+            });
+
+            let isDragging = false;
+            let offsetX = 0, offsetY = 0;
+            dragArea.addEventListener('mousedown', function(e) {
+                if (e.button !== 0) return;
+                isDragging = true;
+                const rect = dialog.getBoundingClientRect();
+                offsetX = e.clientX - rect.left;
+                offsetY = e.clientY - rect.top;
+                dialog.style.cursor = 'grabbing';
+                document.body.style.userSelect = 'none';
+                e.preventDefault();
+            });
+            document.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+                let left = e.clientX - offsetX;
+                let top = e.clientY - offsetY;
+                const maxX = window.innerWidth - dialog.offsetWidth - 10;
+                const maxY = window.innerHeight - dialog.offsetHeight - 10;
+                left = Math.max(10, Math.min(left, maxX));
+                top = Math.max(10, Math.min(top, maxY));
+                dialog.style.left = left + 'px';
+                dialog.style.top = top + 'px';
+                dialog.style.right = 'auto';
+                dialog.style.bottom = 'auto';
+                dialog.style.transform = 'none';
+                e.preventDefault();
+            });
+            document.addEventListener('mouseup', function() {
+                if (isDragging) {
+                    isDragging = false;
+                    dialog.style.cursor = '';
+                    document.body.style.userSelect = '';
+                }
+            });
+
+            let modeIndex = 0;
+            const modes = ['九键', '全键盘', '语音'];
+            toolMode.addEventListener('click', function(e) {
+                e.stopPropagation();
+                modeIndex = (modeIndex + 1) % modes.length;
+                console.log('[QSense] 切换输入模式:', modes[modeIndex]);
+            });
+
+            toolHome.addEventListener('click', function(e) {
+                e.stopPropagation();
+                console.log('[QSense] 主菜单');
+                placeholder.innerHTML = `
+                    <span class="big">🏠</span>
+                    主菜单
+                    <br /><br />
+                    <span style="font-size:12px;opacity:0.5;">仪表盘 · 工作区 · 设置</span>
+                `;
+            });
+
+            toolMenu.addEventListener('click', function(e) {
+                e.stopPropagation();
+                console.log('[QSense] 当前菜单');
+                placeholder.innerHTML = `
+                    <span class="big">☰</span>
+                    当前菜单
+                    <br /><br />
+                    <span style="font-size:12px;opacity:0.5;">文件 · 编辑 · 视图 · 工具</span>
+                `;
+            });
+
+            const modalData = {
+                about: {
+                    title: '关于 QSense',
+                    icon: 'ℹ️',
+                    content: `
+                        <p><strong>QSense</strong> — 基于 WASD 盲打 + 鼠标协作的极简 AI 交互模式。</p>
+                        <br />
+                        <p><strong>设计理念</strong></p>
+                        <p>· 空画布：不预设任何功能，让 AI 决定画布上有什么</p>
+                        <p>· 对话驱动：唯一的交互入口是对话框</p>
+                        <p>· 左右手分工：左手 WASD 控制逻辑，右手鼠标确认业务</p>
+                        <br />
+                        <p style="color:var(--text-tertiary);font-size:12px;">版本 α · 2026</p>
+                    `
+                },
+                settings: {
+                    title: '系统设置',
+                    icon: '⚙️',
+                    content: `
+                        <p><strong>当前配置</strong></p>
+                        <p>· 主题：暗色</p>
+                        <p>· 输入模式：九键 / 全键盘 / 语音</p>
+                        <p>· 语音：未启用</p>
+                        <p>· 通知：开启</p>
+                        <br />
+                        <p style="color:var(--text-tertiary);font-size:12px;">更多选项开发中 …</p>
+                    `
+                },
+                notification: {
+                    title: '通知中心',
+                    icon: '🔔',
+                    content: `
+                        <p><strong>暂无新通知</strong></p>
+                        <br />
+                        <p style="color:var(--text-tertiary);font-size:12px;">系统运行正常，心智网络稳定。</p>
+                        <p style="color:var(--text-tertiary);font-size:12px;">最后检查：刚刚</p>
+                    `
+                }
+            };
+
+            function openModal(key) {
+                const data = modalData[key];
+                if (!data) return;
+                modalTitle.textContent = data.title;
+                modalIcon.textContent = data.icon;
+                modalContent.innerHTML = data.content;
+                modalOverlay.classList.add('open');
+            }
+
+            function closeModal() {
+                modalOverlay.classList.remove('open');
+            }
+
+            topMenuBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const key = this.dataset.modal;
+                    if (key) openModal(key);
+                });
+            });
+
+            modalClose.addEventListener('click', closeModal);
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === this) closeModal();
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    if (modalOverlay.classList.contains('open')) closeModal();
+                }
+            });
+
+            function handleSend() {
+                const text = chatInput.value.trim();
+                if (!text) {
+                    chatInput.style.border = '1px solid var(--error-color)';
+                    setTimeout(() => { chatInput.style.border = 'none'; }, 600);
+                    return;
+                }
+                placeholder.innerHTML = `
+                    <span class="big">💬</span>
+                    你发送了：<br />
+                    <span style="font-size:20px;color:var(--primary);">“${text}”</span>
+                    <br /><br />
+                    <span style="font-size:12px;opacity:0.5;">AI 正在处理 …（演示模式）</span>
+                `;
+                chatInput.value = '';
+                chatInput.focus();
+            }
+
+            sendBtn.addEventListener('click', handleSend);
+            chatInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    if (e.shiftKey) return;
+                    e.preventDefault();
+                    handleSend();
+                }
+            });
+
+            document.getElementById('winMin').addEventListener('click', () => console.log('[QSense] 最小化'));
+            document.getElementById('winMax').addEventListener('click', () => console.log('[QSense] 最大化/还原'));
+            document.getElementById('winClose').addEventListener('click', () => console.log('[QSense] 关闭'));
+
+            dialog.classList.remove('hidden');
+            setTimeout(() => chatInput.focus(), 200);
+            console.log('QSense Demo 已启动 ✅');
+        })();
+    </script>
+
+</body>
+</html>
